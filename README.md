@@ -29,3 +29,7 @@ Recommendations will be appreciated.
 
 ## Main Idea
 Make the middle ware as extensible and distinct from the project as possible, such to increase reusability.
+
+
+### Further notices
+Files in static gets cached, files in non static gets sent on each request

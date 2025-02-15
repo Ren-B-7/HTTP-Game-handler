@@ -11,6 +11,8 @@ import random
 import pathlib
 import sqlite3
 import hashlib
+import io
+import gzip
 
 os.chdir(pathlib.Path(__file__).parent.resolve())
 os.chdir("../frontend")
@@ -38,21 +40,30 @@ STATS_HTML = os.path.abspath("templates/stats.html")
 
 
 class InactivityTimeoutException(Exception):
-    """Custom exception to signal server inactivity timeout."""
+    """
+    Custom exception to signal server inactivity timeout.
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+    """
 
     pass
 
 
 class MajorServerSideException(Exception):
-    """Custom exception to signal extreme cli game fault."""
+    """
+    Custom exception to signal extreme cli game fault.
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+    """
 
     pass
 
 
 class ThreadedHandler(http.server.BaseHTTPRequestHandler):
     # Method to parse POST data into a dictionary of key-value pairs
-    def write(self, data):
-        """Override the write method to handle custom error handling."""
+    def write(self, data: bytes):
+        """
+        Override the write method to handle custom error handling.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
         try:
             self.wfile.write(data)  # Call the base class method to write the data
         except BrokenPipeError:
@@ -67,7 +78,10 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(500, f"Error serving file: {e}")
 
     def end_headers(self):
-        """Determines the file type to set headers properly"""
+        """
+        Determines the file type to set headers properly.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
         if self.path.endswith(".html"):
             self.send_header("Content-Type", "text/html")
         elif self.path.endswith(".js"):
@@ -77,12 +91,18 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
         super().end_headers()
 
     def end_headers_cache(self):
-        """Sets proper headers to cache the webpage, before setting header types for the files"""
+        """
+        Sets proper headers to cache the webpage, before setting header types for the files.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
         self.send_header("Cache-Control", "public, max-age=31536000")
         self.end_headers()
 
-    def parse_out(self, post_data):
-        """Parses the returned info from an http server"""
+    def parse_out(self, post_data: str):
+        """
+        Parses the returned info from an http server.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
         try:
             # Initialize an empty dictionary to store parsed data
             items = {}
@@ -105,8 +125,11 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(100, "Error reading data from webpage")
 
     # Read an HTML file and return its content
-    def read_html(self, file):
-        """Reads the given html file and returns its content"""
+    def read_html(self, file: str):
+        """
+        Reads the given html file and returns its content.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
         try:
             # Open the file in read mode with UTF-8 encoding
             with open(file, "r", encoding="utf-8") as file_data:
@@ -122,6 +145,8 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
         Handles GET requests for the root path and specific pages.
 
         If the path is not recognized, sends a 404 error response.
+
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
         """
         global password_pending, ending_server
 
@@ -139,11 +164,17 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             self.serve_static_file()
         elif self.path.startswith("/non-static/"):
             self.serve_non_static_file()
+        elif self.path.endswith("favicon.ico"):
+            self.send_response(204)  # No content response
+            self.end_headers()
         else:
             self.send_error(404, "Page not found")
 
-    def serve_static_file(self):
-        """Serve JavaScript, CSS, and other static files from the current directory."""
+    def serve_static_file(self) -> None:
+        """
+        Serve JavaScript, CSS, and other static files from the current directory.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
         try:
             filepath = os.path.abspath(self.path.lstrip("/"))
             if os.path.exists(filepath) and os.path.isfile(filepath):
@@ -156,40 +187,73 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             self.send_error(500, f"Error serving file: {e}")
 
-    def serve_non_static_file(self):
-        """Serve non-static files from the current directory."""
+    def serve_non_static_file(self) -> None:
+        """
+        Serve non-static files from the current directory.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
         try:
             filepath = os.path.abspath(self.path.lstrip("/"))
             if os.path.exists(filepath) and os.path.isfile(filepath):
                 self.send_response(200)
+                data = self.compress_gzip(open(filepath, "rb").read())
                 self.end_headers()
-                self.write(open(filepath, "rb").read())
+                self.write(data)
             else:
                 self.send_error(404, f"File not found: {filepath}")
         except Exception as e:
             self.send_error(500, f"Error serving file: {e}")
 
-    def serve_page(self, page, response=200, header="text/html"):
-        """Serves the given page to the correct browser"""
+    def compress_gzip(self, data: bytes) -> bytes:
+        """
+        Compresses the given data using gzip if the client accepts it.
+
+        Args:
+            data (bytes): The data to be compressed.
+
+        Returns:
+            bytes: The compressed data or the original data if the client does not accept gzip encoding.
+
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
+        if not "gzip" in self.headers.get("Accept-Encoding", ""):
+            return data
+        self.send_header("Content-encoding", "gzip")
+        buffer = io.BytesIO()
+        with gzip.GzipFile(fileobj=buffer, mode="wb") as gzip_file:
+            gzip_file.write(data)
+        return buffer.getvalue()
+
+    def serve_page(
+        self, page: str | bytes, response: int = 200, header: str = "text/html"
+    ) -> None:
+        """
+        Serves the given page to the correct browser.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
         try:
             self.send_response(response)
             self.send_header("Content-type", header)
+            if isinstance(page, bytes):
+                data = self.compress_gzip(page)
+            else:
+                data = self.compress_gzip(page.encode("utf-8"))
             self.end_headers()
             # Write the content of the login page to the response
-            if isinstance(page, bytes):
-                self.write(page)
-            else:
-                self.write(page.encode("utf-8"))
+            self.write(data)
         except Exception as e:
             raise e
 
-    def redirect(self, page):
-        """Reddirects user to appropriate page"""
+    def redirect(self, page: str) -> None:
+        """
+        Redirects user to appropriate page.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
         self.send_response(303)
         self.send_header("Location", page)
         self.end_headers()
 
-    def serve_login(self):
+    def serve_login(self) -> None:
         try:
             # Send a successful response with HTML content
             self.serve_page(self.read_html(LOGIN_HTML))
@@ -197,7 +261,7 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             # Send error response if the login page cannot be loaded
             self.send_error(201, f"Error loading login page: {e}")
 
-    def serve_register(self):
+    def serve_register(self) -> None:
         try:
             # Send a successful response with HTML content
             self.serve_page(self.read_html(REGISTER_HTML))
@@ -205,7 +269,7 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             # Send error response if the login page cannot be loaded
             self.send_error(202, f"Error loading register page: {e}")
 
-    def serve_stats(self):
+    def serve_stats(self) -> None:
         try:
             # Send a successful response with HTML content
             self.serve_page(self.read_html(STATS_HTML))
@@ -213,7 +277,7 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             # Send error response if the login page cannot be loaded
             self.send_error(203, f"Error loading stats page: {e}")
 
-    def serve_game(self):
+    def serve_game(self) -> None:
         try:
             # Send a successful response with HTML content
             self.serve_page(self.read_html(GAME_HTML))
@@ -221,9 +285,14 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             # Send error response if the login page cannot be loaded
             self.send_error(204, f"Error loading game page: {e}")
 
-    def handle_make_game(self):
-        """Handles the creation of games and instances, auto adds instances and
-        removes from list of non-binded ips"""
+    def handle_make_game(self) -> None:
+        """
+        Handles the creation of games and instances, auto adds instances and
+        removes from list of non-binded ips
+
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
+
         global promiscuis_ips
         if len(promiscuis_ips) < 2:
             return
@@ -241,32 +310,24 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             "lua_instance": instance_pointer,
         }
 
-    def do_POST(self):
+    def do_POST(self) -> None:
         """
-        Handles POST requests to the server.
+        Handles all POST requests to the server.
 
-        POST requests are handled based on the path of the request. The following
-        paths are currently supported:
+        This function determines the type of POST request and calls the appropriate
+        handler function. The following POST requests are handled:
 
-        /login: Handles login logic, including checking the username and password
-            and serving the login page.
+            - /login: Handles user login.
+            - /register: Handles user registration.
+            - /stats: Handles user stats retrieval.
+            - /game: Handles game logic.
+            - /Search: Handles matchmaking.
+            - /Cancel: Handles cancelling matchmaking.
+            - /Rematch: Handles rematching (currently not implemented).
 
-        /register: Handles registration logic, including checking the username and
-            password and serving the registration page.
+        :return: None
 
-        /stats: Handles serving the statistics page.
-
-        /game: Handles serving the game page.
-
-        /Search: Handles starting matchmaking. If the client is not already in
-            connected_ips, adds the client to promiscuis_ips and connected_ips.
-
-        /Cancel: Handles canceling matchmaking. If the client is in promiscuis_ips,
-            removes the client from promiscuis_ips.
-
-        /Rematch: Not yet implemented.
-
-        :param self: The instance of the class.
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
         """
         global promiscuis_ips, connected_ips
         if self.path == "/login":
@@ -295,9 +356,24 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
 
 
 # This makes the new server instance
-def open_new_instance():
-    """Creates new instance of chess game, will return pointer to said game
-    object"""
+def open_new_instance() -> subprocess.Popen:
+    """
+    Launches a new game instance as a subprocess and returns the process object.
+
+    This function attempts to start a new game instance using the global
+    `game_cli` command. It creates a new session for the subprocess and captures
+    both the standard output and standard error streams. If the subprocess
+    returns a non-zero exit code or an error occurs, the function prints an
+    error message and returns None. If the output contains the word "good",
+    indicating successful execution, the process object is returned.
+
+    Returns:
+        subprocess.Popen: The process object if the instance starts successfully,
+                          otherwise None.
+
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+    """
+
     global error_found
     try:
         # Uses new session = true and pipes output and error
@@ -324,38 +400,28 @@ def open_new_instance():
         return None
 
 
-class TimeoutThreadingHTTPServer(http.server.ThreadingHTTPServer):
-    last_activity_time = time.time()
-    inactivity_timeout = 60 * 5
+def communicate(command: str, server_instance: subprocess.Popen = None) -> str:
+    """
+    Communicates with a server instance.
 
-    def __init__(self, server_address, RequestHandlerClass):
-        super().__init__(server_address, RequestHandlerClass)
+    This function communicates with a server instance using the given command.
+    If no server instance is given, it will create a new one. If the command
+    fails, it will print an error and exit. If the server instance fails,
+    it will print an error and exit.
 
-    def server_activate(self):
-        super().server_activate()
-        # Start a thread to monitor inactivity
-        threading.Thread(target=self.monitor_inactivity, daemon=True).start()
-        self.last_activity_time = time.time()
+    Parameters:
+        command (str): The command to send to the server instance.
+        server_instance (subprocess.Popen): The server instance to communicate
+            with. If not given, a new instance is created.
 
-    def process_request(self, request, client_address):
-        # Update the last activity time when processing a request
-        self.last_activity_time = time.time()
-        super().process_request(request, client_address)
+    Returns:
+        str: The output of the command.
 
-    def monitor_inactivity(self):
-        global timeout
-        while True:
-            # Check if the server has been idle for too long
-            if time.time() - self.last_activity_time > self.inactivity_timeout:
-                print("No activity for 5 minutes, shutting down the server.")
-                timeout = True
-                self.shutdown()
-                break
-            time.sleep(15)  # Check every 15 seconds
+    Raises:
+        MajorServerSideException: If the server instance could not be created.
 
-
-def communicate(command, server_instance=None):
-    """Handles communication with game instance and returns said output"""
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+    """
     global error_found
     try:
         if not server_instance:
@@ -383,11 +449,84 @@ def communicate(command, server_instance=None):
         exit(1)
 
 
+class TimeoutThreadingHTTPServer(http.server.ThreadingHTTPServer):
+    last_activity_time = time.time()
+    inactivity_timeout = 60 * 5
+
+    def __init__(self, server_address: tuple, RequestHandlerClass) -> None:
+        super().__init__(server_address, RequestHandlerClass)
+
+    def server_activate(self) -> None:
+        """
+        Starts the server and spawns a separate thread to monitor inactivity.
+
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
+        super().server_activate()
+        threading.Thread(target=self.monitor_inactivity, daemon=True).start()
+        self.last_activity_time = time.time()
+
+    def process_request(self, request, client_address) -> None:
+        """
+        Processes an incoming request and updates the last activity timestamp.
+
+        This method is called to handle each incoming request to the server. It
+        updates the `last_activity_time` to the current time to indicate that there
+        has been recent activity, and then delegates the actual processing of the
+        request to the parent class's `process_request` method.
+
+        Parameters:
+            request: The incoming request to be processed.
+            client_address: The address of the client making the request.
+
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
+
+        self.last_activity_time = time.time()
+        super().process_request(request, client_address)
+
+    def monitor_inactivity(self) -> None:
+        """
+        Monitors server inactivity and shuts it down if it has been idle for too long.
+
+        This method runs in its own thread and continuously checks if the server
+        has been idle for longer than the specified inactivity timeout. If it has,
+        it prints a message, sets the timeout flag and shuts down the server.
+
+        The inactivity timeout is in seconds and defaults to 5 minutes.
+
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
+        global timeout
+        while True:
+            # Check if the server has been idle for too long
+            if time.time() - self.last_activity_time > self.inactivity_timeout:
+                print("No activity for 5 minutes, shutting down the server.")
+                timeout = True
+                self.shutdown()
+                break
+            time.sleep(15)  # Check every 15 seconds
+        return None
+
+
 # Set up and run the HTTP server
-def run(server_class=TimeoutThreadingHTTPServer, handler_class=ThreadedHandler):
+def run(server_class=TimeoutThreadingHTTPServer, handler_class=ThreadedHandler) -> None:
     """
-    Sets up and runs an HTTP server on localhost:5000 that responds to GET
-    and POST requests. The server is designed to be run in a separate thread.
+    Starts and runs the HTTP server.
+
+    This function sets up and runs the HTTP server with the given server and
+    handler classes. It listens on localhost:5000 and logs a message to indicate
+    when the server is started. When the server is terminated, either by a
+    KeyboardInterrupt or an exception, it logs a message and terminates the
+    process. Finally, it closes the server and sets the ending flag to True.
+
+    Parameters:
+        server_class (class): The class of the HTTP server. Defaults to
+            TimeoutThreadingHTTPServer.
+        handler_class (class): The class of the request handler. Defaults to
+            ThreadedHandler.
+
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     """
     global httpd, ending
     server_address = ("", 5000)  # Server listens on localhost:5000
@@ -401,28 +540,24 @@ def run(server_class=TimeoutThreadingHTTPServer, handler_class=ThreadedHandler):
         exit(0)
     except Exception as e:
         print("WebServer Terminated with error: ", e)
-        exit(0)
+        exit(1)
 
     httpd.server_close()
     ending = True
+    return None
 
 
-def kill_active_threads(active):
+def kill_active_threads(active: threading.Thread) -> None:
     """
-    Waits for non-daemon threads to finish, then terminates if necessary.
+    Terminates all active threads except for the main thread and the active thread
 
-    This function iterates over all active threads, excluding the specified active
-    thread and the main thread. For each non-daemon thread, it attempts to join
-    for a maximum of 10 seconds. If the thread is still alive after this period,
-    it logs a message indicating the thread will be killed after termination.
+    This function is used to terminate all active threads except for the main thread
+    and the active thread. It waits for each thread to terminate for up to 10 seconds,
+    and if the thread is still alive after that, it terminates the thread with
+    SIGTERM.
 
-    Args:
-        active: The thread to exclude from waiting and termination procedures.
-
-    Raises:
-        KeyboardInterrupt: If interrupted during execution, terminates the process.
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     """
-
     try:
         main = threading.main_thread()
         for thread in threading.enumerate():
@@ -440,9 +575,12 @@ def kill_active_threads(active):
     except KeyboardInterrupt as e:
         print(e)
         os.kill(os.getpid(), signal.SIGTERM)
+    except Exception as e:
+        print("wtf happened here (Encoutered new error in kill_active_threads) ", e)
+    return None
 
 
-def db_loop():
+def db_loop() -> None:
     """
     Handles database operations asynchronously in a separate thread.
 
@@ -464,6 +602,7 @@ def db_loop():
     checking again.
 
     When the loop exits, the function terminates the process with exit code 0.
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     """
     while not (timeout or error_found or ending_server):
         while len(db_command_hook) > 0:
@@ -473,10 +612,12 @@ def db_loop():
             elif action == "UPDATE":
                 change_user_data(action, params)
         time.sleep(3)
-    exit(0)
+    return None
 
 
-def update_elo(player_rating, opponent_rating, score, K=32):
+def update_elo(
+    player_rating: float, opponent_rating: float, score: float, K: int = 32
+) -> float:
     """
     Update a player's Elo rating after a game.
 
@@ -488,19 +629,27 @@ def update_elo(player_rating, opponent_rating, score, K=32):
 
     Returns:
     float: The updated player rating.
+
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     """
     expected_score = calculate_expected_score(player_rating, opponent_rating)
     new_rating = player_rating + K * (score - expected_score)
     return new_rating
 
 
-def calculate_expected_score(player_rating, opponent_rating):
-    """Calculate the expected score based on the Elo rating system."""
+def calculate_expected_score(player_rating: float, opponent_rating: float) -> float:
+    """
+    Calculate the expected score based on the Elo rating system.
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+    """
     return 1 / (1 + 10 ** ((opponent_rating - player_rating) / 400))
 
 
-def change_user_data(action, info):
-    """Update an existing user's data in the database."""
+def change_user_data(action: str, info: dict) -> None:
+    """
+    Update an existing user's data in the database.
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+    """
     global db_connection, db_cursor, error_found
 
     if not (db_connection and db_cursor):  # Ensure DB is initialized
@@ -536,10 +685,14 @@ def change_user_data(action, info):
 
     except sqlite3.IntegrityError as e:
         print(f"Error: {e}")
+    return None
 
 
-def create_new_user(name, password):
-    """Insert a new user into the database."""
+def create_new_user(name: str, password: str) -> None:
+    """
+    Insert a new user into the database.
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+    """
     global db_connection, db_cursor, error_found
     if not (db_connection and db_cursor):
         error_found = True
@@ -559,9 +712,10 @@ def create_new_user(name, password):
         print(f"User {name} added successfully!")
     except sqlite3.IntegrityError as e:
         print(f"Error: {e}")
+    return None
 
 
-def create_db(db_name="game.db"):
+def create_db(db_name: str = "game.db") -> None:
     """
     Connects to a given SQLite database and creates the necessary table if it doesn't exist.
 
@@ -570,6 +724,8 @@ def create_db(db_name="game.db"):
 
     Raises:
         Exception: If connecting to the database or creating the table fails.
+
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     """
     global db_connection, db_cursor, error_found
     try:
@@ -595,15 +751,18 @@ def create_db(db_name="game.db"):
         error_found = True
         print(f"Error found: {e}")
         exit(1)
+    return None
 
 
-def generate_password_hash(password, salt=None) -> tuple:
+def generate_password_hash(password: str, salt: bytes = None) -> tuple:
     """
     Generates a SHA256 hash of the given password and an optional salt.
 
     If no salt is provided, a random 16-byte salt is generated.
 
     Returns a tuple containing the hashed password and the salt as hexadecimal strings.
+
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     """
     if not salt:
         salt = os.urandom(16)
@@ -613,11 +772,12 @@ def generate_password_hash(password, salt=None) -> tuple:
     return hashed_password, salt.hex()
 
 
-def decypher_password(password, hashed_password, salt) -> str:
+def decypher_password(password: str, hashed_password: str, salt: bytes) -> str:
+    # Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     return generate_password_hash(password, bytes.fromhex(salt))[0] == hashed_password
 
 
-def check_inactivity():
+def check_inactivity() -> None:
     """
     Monitors server inactivity and handles shutdown procedures.
 
@@ -636,6 +796,8 @@ def check_inactivity():
                                     inactivity timeout.
         Exception: Raised for any general error that requires the server
                    to stop.
+
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     """
 
     global httpd, timeout, error_found, ending, db_connection
@@ -643,12 +805,10 @@ def check_inactivity():
         while True:
             time.sleep(5)
             if timeout:
-                httpd.server_close()
                 raise InactivityTimeoutException(
                     "Inactivity limit reached, stopping server"
                 )
             if error_found:
-                httpd.server_close()
                 raise Exception("Error found, stopping server")
             if ending_server:
                 break
@@ -656,6 +816,7 @@ def check_inactivity():
         pass
     except Exception as e:
         print(f"{e}")
+    httpd.server_close()
     kill_active_threads(threading.current_thread())
     if db_connection:
         db_connection.close()

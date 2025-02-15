@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Player Stats</title>
+</head>
+<body>
+    <div class="stats-container">
+        <div class="player-info">
+            <div class="player-name">Player Name</div>
+            <div class="player-elo">ELO</div>
+        </div>
+        <div class="stats-row">
+            <div class="wins">Wins: 10</div>
+            <div class="ties">Ties: 5</div>
+            <div class="losses">Losses: 3</div>
+        </div>
+        <div class="games-info">
+            <div class="games-played">Games Played: 18</div>
+            <div class="last-played">Last Played: 2023-10-15</div>
+        </div>
+    </div>
+</body>
+</html>

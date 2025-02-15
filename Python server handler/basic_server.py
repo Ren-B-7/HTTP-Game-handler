@@ -1,5 +1,6 @@
 import datetime
 import http.server
+import http.cookies
 import subprocess
 import os
 import sys
@@ -8,13 +9,14 @@ import time
 import threading
 import signal
 import random
-import pathlib
 import sqlite3
 import hashlib
 import io
 import gzip
+import secrets
+import queue
 
-os.chdir(pathlib.Path(__file__).parent.resolve())
+os.chdir(os.path.dirname(__file__))
 os.chdir("../frontend")
 
 game_cli = ""
@@ -25,18 +27,18 @@ error_found = False
 ending_server = False
 
 promiscuis_ips = set()
-connected_ips = set()
-ip_to_ign = {}
+session_store = {}
 active_games = {}
 
 db_connection = None
 db_cursor = None
-db_command_hook = []
+db_command_hook = queue.Queue()
 
 LOGIN_HTML = os.path.abspath("templates/login.html")
 REGISTER_HTML = os.path.abspath("templates/register.html")
 GAME_HTML = os.path.abspath("templates/game.html")
 STATS_HTML = os.path.abspath("templates/stats.html")
+HOME_HTML = os.path.abspath("templates/stats.html")
 
 
 class InactivityTimeoutException(Exception):
@@ -57,9 +59,18 @@ class MajorServerSideException(Exception):
     pass
 
 
+class NoDataException(Exception):
+    """
+    Custom Exception to pass when no data is read from html file
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+    """
+
+    pass
+
+
 class ThreadedHandler(http.server.BaseHTTPRequestHandler):
     # Method to parse POST data into a dictionary of key-value pairs
-    def write(self, data: bytes):
+    def write(self, data: bytes) -> None:
         """
         Override the write method to handle custom error handling.
         Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
@@ -77,7 +88,7 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             print(f"Error while writing to client: {e}")
             self.send_error(500, f"Error serving file: {e}")
 
-    def end_headers(self):
+    def end_headers(self) -> None:
         """
         Determines the file type to set headers properly.
         Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
@@ -90,7 +101,7 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/css")
         super().end_headers()
 
-    def end_headers_cache(self):
+    def end_headers_cache(self) -> None:
         """
         Sets proper headers to cache the webpage, before setting header types for the files.
         Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
@@ -98,7 +109,7 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "public, max-age=31536000")
         self.end_headers()
 
-    def parse_out(self, post_data: str):
+    def parse_out(self, post_data: str) -> dict:
         """
         Parses the returned info from an http server.
         Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
@@ -123,9 +134,10 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
         except:
             # Send error response if parsing fails
             self.send_error(100, "Error reading data from webpage")
+            return {}
 
     # Read an HTML file and return its content
-    def read_html(self, file: str):
+    def read_html(self, file: str) -> str | None:
         """
         Reads the given html file and returns its content.
         Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
@@ -148,25 +160,33 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
 
         Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
         """
-        global password_pending, ending_server
-
+        global password_pending, ending_server, session_store
         if self.path == "/":
-            self.redirect("/login")
+            return self.redirect("/login")
         elif self.path == "/login":
-            self.serve_game()
-        elif self.path == "/register":
-            self.serve_register()
-        elif self.path == "/stats":
-            self.serve_stats()
-        elif self.path == "/game":
-            self.serve_game()
+            return self.serve_login()
         elif self.path.startswith("/static/"):
-            self.serve_static_file()
+            return self.serve_static_file()
         elif self.path.startswith("/non-static/"):
-            self.serve_non_static_file()
+            return self.serve_non_static_file()
         elif self.path.endswith("favicon.ico"):
             self.send_response(204)  # No content response
-            self.end_headers()
+            return self.end_headers()
+
+        user_session_id = self.get_cookie("session_id")
+        if not user_session_id or not user_session_id in session_store:
+            return self.redirect("/login")
+        else:
+            session_store[session_id]["last_active"] = time.time()
+
+        if self.path == "/register":
+            return self.serve_register()
+        elif self.path == "/stats":
+            return self.serve_stats()
+        elif self.path == "/game":
+            return self.serve_game()
+        elif self.path == "/home":
+            return self.serve_home()
         else:
             self.send_error(404, "Page not found")
 
@@ -285,6 +305,37 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             # Send error response if the login page cannot be loaded
             self.send_error(204, f"Error loading game page: {e}")
 
+    def serve_home(self) -> None:
+        try:
+            # Send a successful response with HTML content
+            self.serve_page(self.read_html(HOME_HTML))
+        except Exception as e:
+            # Send error response if the login page cannot be loaded
+            self.send_error(205, f"Error loading home page: {e}")
+
+    def get_cookie(self, cookie_name) -> str:
+        """
+        Get a cookie value by name.
+
+        Parameters
+        ----------
+        cookie_name : str
+            The name of the cookie to retrieve.
+
+        Returns
+        -------
+        dict
+            A dictionary with a single key-value pair containing the cookie value.
+            If the cookie does not exist, an empty dictionary is returned.
+
+        Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+        """
+        cookie_header = self.headers.get("Cookie")
+        if not cookie_header:
+            return {}
+        cookies = http.cookies.SimpleCookie(cookie_header)
+        return cookies.get(cookie_name) if cookie_name in cookies else None
+
     def handle_make_game(self) -> None:
         """
         Handles the creation of games and instances, auto adds instances and
@@ -329,7 +380,7 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
 
         Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
         """
-        global promiscuis_ips, connected_ips
+        global promiscuis_ips
         if self.path == "/login":
             self.handle_login()
         elif self.path == "/register":
@@ -340,9 +391,9 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
             self.handle_game()
         elif self.path == "/Search":
             client = self.client_address[0]
-            if not client in connected_ips:
-                promiscuis_ips.add(client)
-                connected_ips.add(client)
+            promiscuis_ips.add(client)
+            # if ip is not in promiscuis_ips, add it? Also check connected ips, from new session store
+
             self.handle_make_game()
             # Need to send a package back saying starting matchmaking
         elif self.path == "/Cancel":
@@ -353,6 +404,73 @@ class ThreadedHandler(http.server.BaseHTTPRequestHandler):
         elif self.path == "/Rematch":
             # add code for rematching here
             raise NotImplementedError
+
+    def read_post_request(self) -> dict:
+        """
+        Reads and parses a POST request to extract form data into a dictionary.
+
+        This function reads the 'Content-Length' header to determine the size of the
+        incoming POST data, reads and decodes the data, and then parses it into a dictionary
+        using the `parse_out` method. If an error occurs during reading or parsing, it sends
+        an error response and exits on critical failure.
+
+        Returns:
+            dict: Parsed form data as a dictionary.
+
+        Raises:
+            AssertionError: If the 'Content-Length' header is not an integer.
+        """
+
+        global error_found
+        try:
+            length = int(self.headers.get("Content-Length"))
+            assert isinstance(length, int), "length must be of type int"
+            post_data = self.rfile.read(length).decode("utf-8")
+
+            if not post_data:
+                raise NoDataException("No data to read from html page")
+            return self.parse_out(post_data)
+        except NoDataException as e:
+            print(e)
+            return {}
+        except:
+            self.send_error(101, "Error reading data from webpage")
+            error_found = True
+            exit(1)  # Exit on critical error
+
+    def handle_login(self) -> None:
+        global error_found
+        data = self.read_post_request()
+
+        session_id = secrets.token_hex(16)
+
+        username = data["username"]
+        password = data["password"]
+        if not username:
+            return None
+
+        hashed, salt = get_username_and_pass(username)
+        if not (hashed and salt):
+            self.redirect("/register")
+            return None
+        if not check_password(password, hashed, salt):
+            # Send header back stating user got username/ password wrong
+            print("ERROR ERROR ERROR NOT HANDLED YET, user got password wrong!!")
+            return None
+
+        session_store[session_id] = {
+            "username": username,
+            "ip": self.client_address[0],
+            "last_active": time.time(),
+        }  # Store username - ip pair with session id
+
+        self.send_response(200)
+        self.send_header(
+            "Set-Cookie", f"session_id={session_id}; HttpOnly; Secure; SameSite=Strict"
+        )
+        self.end_headers()
+        print(f"User {username} logged in from {self.client_address[0]}")
+        self.redirect("/home")
 
 
 # This makes the new server instance
@@ -390,14 +508,12 @@ def open_new_instance() -> subprocess.Popen:
         # Determine returncode
         if program.returncode != 0:
             print(f"Error: {error.strip()}")
-            return None
         if "good" in out.strip():
             return program
         raise Exception
     except Exception as e:
         print(f"An error occurred: {e}")
         error_found = True
-        return None
 
 
 def communicate(command: str, server_instance: subprocess.Popen = None) -> str:
@@ -451,7 +567,7 @@ def communicate(command: str, server_instance: subprocess.Popen = None) -> str:
 
 class TimeoutThreadingHTTPServer(http.server.ThreadingHTTPServer):
     last_activity_time = time.time()
-    inactivity_timeout = 60 * 5
+    inactivity_timeout = 60 * 10
 
     def __init__(self, server_address: tuple, RequestHandlerClass) -> None:
         super().__init__(server_address, RequestHandlerClass)
@@ -463,7 +579,7 @@ class TimeoutThreadingHTTPServer(http.server.ThreadingHTTPServer):
         Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
         """
         super().server_activate()
-        threading.Thread(target=self.monitor_inactivity, daemon=True).start()
+        threading.Thread(target=self.monitor_inactivity).start()
         self.last_activity_time = time.time()
 
     def process_request(self, request, client_address) -> None:
@@ -498,15 +614,14 @@ class TimeoutThreadingHTTPServer(http.server.ThreadingHTTPServer):
         Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
         """
         global timeout
-        while True:
+        while not (ending_server or error_found):
             # Check if the server has been idle for too long
             if time.time() - self.last_activity_time > self.inactivity_timeout:
                 print("No activity for 5 minutes, shutting down the server.")
                 timeout = True
-                self.shutdown()
                 break
             time.sleep(15)  # Check every 15 seconds
-        return None
+        self.shutdown()
 
 
 # Set up and run the HTTP server
@@ -542,9 +657,8 @@ def run(server_class=TimeoutThreadingHTTPServer, handler_class=ThreadedHandler) 
         print("WebServer Terminated with error: ", e)
         exit(1)
 
-    httpd.server_close()
     ending = True
-    return None
+    httpd.server_close()
 
 
 def kill_active_threads(active: threading.Thread) -> None:
@@ -560,15 +674,15 @@ def kill_active_threads(active: threading.Thread) -> None:
     """
     try:
         main = threading.main_thread()
-        for thread in threading.enumerate():
+        for thread in reversed(threading.enumerate()):
             if thread == active or thread == main:
                 continue
             if thread.daemon:
-                print(f"Thread is daemonized, skipping")
+                print(f"Thread is daemonized, skipping: {thread.name}")
                 continue
 
             print(f"Waiting for thread: {thread.name}")
-            thread.join(10)
+            thread.join(15)
 
             if thread.is_alive():
                 print(f"Killing thread with main after termination: {thread.name}")
@@ -577,19 +691,18 @@ def kill_active_threads(active: threading.Thread) -> None:
         os.kill(os.getpid(), signal.SIGTERM)
     except Exception as e:
         print("wtf happened here (Encoutered new error in kill_active_threads) ", e)
-    return None
 
 
 def db_loop() -> None:
     """
-    Handles database operations asynchronously in a separate thread.
+    Handles database operations synchronously in a separate thread from main or callee.
 
     This function enters an infinite loop until one of the following conditions
     is met: the server has been idle for too long, a major fault has been
     detected, or the server has been signaled to terminate.
 
     In each iteration, it checks for and executes any database commands that
-    have been queued in the `db_command_hook` list. Database commands are
+    have been queued in the `db_command_hook` queue. Database commands are
     represented as tuples of the form `(action, params)`, where `action` is a
     string indicating the type of database operation to perform and `params` is
     a list of parameters to pass to the operation function.
@@ -605,14 +718,14 @@ def db_loop() -> None:
     Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     """
     while not (timeout or error_found or ending_server):
-        while len(db_command_hook) > 0:
-            action, params = db_command_hook.pop()
+        while not db_command_hook.empty():
+            action, params = db_command_hook.get()
             if action == "INSERT":
                 create_new_user(*params)
             elif action == "UPDATE":
                 change_user_data(action, params)
-        time.sleep(3)
-    return None
+        time.sleep(5)
+    db_command_hook.shutdown()
 
 
 def update_elo(
@@ -665,8 +778,7 @@ def change_user_data(action: str, info: dict) -> None:
         fields = action.split()[1:]  # Remove "UPDATE"
 
         if not fields:
-            print("Error: No fields specified for update.")
-            return
+            return print("Error: No fields specified for update.")
 
         for field in fields:
             if field in info:
@@ -682,10 +794,28 @@ def change_user_data(action: str, info: dict) -> None:
         db_connection.commit()
 
         print(f"User {info['old_name']} updated successfully!")
-
     except sqlite3.IntegrityError as e:
         print(f"Error: {e}")
-    return None
+
+
+def get_username_and_pass(name: str) -> dict:
+    global db_connection, db_cursor, error_found
+    if not (db_connection and db_cursor):
+        error_found = True
+        print("DB not initialized")
+        exit(1)
+
+    try:
+        db_cursor.execute("SELECT * FROM users WHERE username = ?", (name))
+        user_data = db_cursor.fetchone()
+        return {
+            "username": user_data[1],
+            "password_hash": user_data[2],
+            "salt": user_data[3],
+        }
+    except sqlite3.IntegrityError as e:
+        print(f"Error: {e}")
+        return {}
 
 
 def create_new_user(name: str, password: str) -> None:
@@ -712,7 +842,6 @@ def create_new_user(name: str, password: str) -> None:
         print(f"User {name} added successfully!")
     except sqlite3.IntegrityError as e:
         print(f"Error: {e}")
-    return None
 
 
 def create_db(db_name: str = "game.db") -> None:
@@ -751,7 +880,6 @@ def create_db(db_name: str = "game.db") -> None:
         error_found = True
         print(f"Error found: {e}")
         exit(1)
-    return None
 
 
 def generate_password_hash(password: str, salt: bytes = None) -> tuple:
@@ -772,9 +900,26 @@ def generate_password_hash(password: str, salt: bytes = None) -> tuple:
     return hashed_password, salt.hex()
 
 
-def decypher_password(password: str, hashed_password: str, salt: bytes) -> str:
+def decypher_password(password: str, hashed_password: str, salt: bytes) -> bool:
     # Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     return generate_password_hash(password, bytes.fromhex(salt))[0] == hashed_password
+
+
+def check_inactive_sessions() -> None:
+    """
+    Periodically checks the stored sessions for inactivity.
+
+    If a session has been inactive for more than 600 seconds, it is removed from the session store.
+
+    This function runs in an infinite loop until the server is stopped or an error is found.
+
+    Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
+    """
+    while not (ending_server or timeout or error_found):
+        for session_id in session_store:
+            if time.time() - session_store[session_id]["last_active"] > 600:
+                del session_store[session_id]
+        time.sleep(10)
 
 
 def check_inactivity() -> None:
@@ -800,7 +945,7 @@ def check_inactivity() -> None:
     Author: Renier Barnard (renier52147@gmail.com/ renierb@axxess.co.za)
     """
 
-    global httpd, timeout, error_found, ending, db_connection
+    global httpd, timeout, error_found, ending_server, db_connection
     try:
         while True:
             time.sleep(5)
@@ -813,9 +958,12 @@ def check_inactivity() -> None:
             if ending_server:
                 break
     except KeyboardInterrupt:
+        print("Server stopping")
+        ending_server = True
         pass
     except Exception as e:
         print(f"{e}")
+        error_found = True
     httpd.server_close()
     kill_active_threads(threading.current_thread())
     if db_connection:
@@ -839,6 +987,7 @@ if __name__ == "__main__":
         bot_cli = sys.argv[3]
 
     sub_thread = threading.Thread(target=run, daemon=True).start()
-    sub_thread = threading.Thread(target=db_loop, daemon=True).start()
+    sub_thread = threading.Thread(target=db_loop).start()
+    sub_thread = threading.Thread(target=check_inactive_sessions).start()
 
     check_inactivity()

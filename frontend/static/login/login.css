@@ -28,9 +28,9 @@
 }
 
 /* Stats container styling */
-.stats-container {
+.login-container {
   display: grid; /* Use CSS Grid for layout */
-  grid-template-columns: 1fr 2fr; /* Two columns: first one is smaller, second one is larger */
+  grid-template-columns: 1fr 2fr; /* Two columns: first one is smaller, second one is larger *
   gap: 20px; /* Adds space between grid items */
   max-width: 90vw; /* Max width based on viewport width */
   margin: 20px auto; /* Centers the container and adds margin */
@@ -45,16 +45,16 @@
 }
 
 /* Player info layout */
-.player-info {
+.multi-row-container {
   grid-column: span 2; /* Makes the player info span across both columns */
   display: flex; /* Use Flexbox for alignment */
-  justify-content: space-between; /* Space between name and elo */
+  justify-content: center; /* Space between name and elo */
   width: 100%;
   margin-bottom: 30px; /* Margin below the player info */
 }
 
 /* Player name and elo styling */
-.player-name {
+.text {
   font-size: 5vw; /* Larger font size for player name based on viewport width */
   font-weight: bold; /* Bold text for emphasis */
   color: white; /* White color for text */
@@ -62,7 +62,7 @@
   flex: 1;
 }
 
-.player-elo {
+.other {
   font-size: 4vw; /* Larger font size for ELO */
   height: 120px; /* Fixed height for the ELO box */
   width: 100%; /* Full width of the column */
@@ -75,7 +75,7 @@
 }
 
 /* Stats row styling */
-.stats-row {
+.username-row {
   grid-column: span 2; /* Full width for the stats row */
   display: flex; /* Use Flexbox for horizontal alignment */
   justify-content: space-around; /* Space out the stats evenly */
@@ -83,39 +83,48 @@
   margin-bottom: 20px;
 }
 
-.stats-row div {
+.username-row div {
   flex: 1; /* Each stat div takes equal space */
   text-align: center; /* Center align text */
   color: white;
+  border: none;
+  outline: none;
 }
 
 /* Stats categories - wins, ties, losses row */
-.stats-row .wins,
-.stats-row .ties,
-.stats-row .losses {
-  font-size: 3vw; /* Font size based on viewport width */
-  font-weight: bold; /* Bold text for emphasis */
+.username-row .username,
+.username-row .username-box {
+  border: none;
+  background-color: transparent;
+  outline: none;
+  width: 100%;
 }
 
 /* Games info layout */
-.games-info {
+.password-row {
   grid-column: span 2; /* Full width for games info */
   display: flex; /* Use Flexbox for alignment */
   justify-content: space-between; /* Space between games played and last played */
   width: 100%;
   color: white;
+  border: 0px;
+  outline: none;
 }
 
-.games-info div {
-  flex: 1; /* Each stat div takes equal space */
+.password-row div {
+  flex: 1; /* Each div takes equal space */
   text-align: center; /* Center align text */
   color: white;
+  border: 0px;
+  outline: none;
 }
 
-.games-info .games-played,
-.games-info .date-joined,
-.games-info .last-played {
-  font-size: 2vw; /* Standard font size for games played and last played */
+.password-row .password,
+.password-row .password-box {
+  border: 0px;
+  background-color: transparent;
+  outline: none;
+  width: 100%;
 }
 
 /* Button styles */

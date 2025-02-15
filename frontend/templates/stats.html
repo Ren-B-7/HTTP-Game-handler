@@ -13,6 +13,7 @@
 </head>
 
 <body>
+  <div id="loading">Loading...</div>
 
   <div class="container">
     <!-- Stats Container -->
@@ -37,12 +38,19 @@
         <div class="date-joined">Date Joined: 1999-02-14</div>
       </div>
 
-      <!-- Start Game Button -->
-      <div class="stats-row">
-        <button class="button">Start Game</button>
-      </div>
     </div>
   </div>
+  <script>
+    // Show loading screen when navigating
+    window.addEventListener('beforeunload', function () {
+      document.getElementById('loading').style.display = 'flex';
+    });
+
+    // Hide loading screen once the page loads
+    window.addEventListener('load', function () {
+      document.getElementById('loading').style.display = 'none';
+    });
+  </script>
 </body>
 
 </html>

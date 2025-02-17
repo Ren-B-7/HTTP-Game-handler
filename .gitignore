@@ -246,3 +246,4 @@ _testmain.go
 #*.png
 #*.jpeg
 *.psd
+*.db

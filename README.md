@@ -33,3 +33,17 @@ Make the middle ware as extensible and distinct from the project as possible, su
 
 ### Further notices
 Files in static gets cached, files in non static gets sent on each request
+
+# Todo
+
+
+### Lua-Rust
+Start Rust backend for the chess game
+Finish lua cli for chess game
+
+### Font end
+Complete frontend for tha game page js/html/css
+
+### Python
+Finish requests and handlers in python for webserver
+Debate on SSL encryption to enable https

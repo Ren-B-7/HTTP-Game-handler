@@ -38,12 +38,12 @@ Files in static gets cached, files in non static gets sent on each request
 
 
 ### Lua-Rust
-Start Rust backend for the chess game
-Finish lua cli for chess game
+Start Rust backend for the chess game  
+Finish lua cli for chess game  
 
 ### Font end
-Complete frontend for tha game page js/html/css
+Complete frontend for tha game page js/html/css  
 
 ### Python
-Finish requests and handlers in python for webserver
-Debate on SSL encryption to enable https
+Finish requests and handlers in python for webserver  
+Debate on SSL encryption to enable https  

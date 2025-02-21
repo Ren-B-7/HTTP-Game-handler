@@ -1,0 +1,17 @@
+#board1 {
+  display: block;
+  margin: auto;
+  background-color: #444;
+  border: 0px solid;
+  width: 60vw;
+  height: 60vw;
+}
+
+button {
+  padding: 10px 15px;
+  margin-top: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #555;
+  color: white;
+}

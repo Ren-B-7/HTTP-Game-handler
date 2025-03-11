@@ -1168,7 +1168,8 @@ if __name__ == "__main__":
 
     os.chdir(os.path.dirname(__file__))
     os.chdir("../chess_backend")
-    game_cli = "lua " + os.path.abspath("chess.lua") + " -c"
+    game_cli = "lua " + os.path.abspath("cli.lua") + " -c"
+    print(game_cli)
 
     if len(sys.argv) > 2:
         create_db(sys.argv[2])

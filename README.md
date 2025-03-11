@@ -11,12 +11,9 @@ Also meant to do session handling, by tracking open tty sessions with the indica
 
 Basic, supposed to be the front end stack, where the javascript interacts with the python middle ware, where it will decide on actions. Like creating new users. Updating old user data. And other later functionality.  
 
-## Lua/ RUST
+## Rust  
 
-Rust will be the absolute lowest level, where it does most of the checking in an async manner, but called async by the Lua wrapper. It will extend the lua wrapper using either the mLua/ hlua/ tlua library, decision to be made.  
-
-Lua will essentially wrap the rust objects and be the main callee for the game handler.  
-The idea is that the backend is a cli tool to determine legality/ actions that can/ will be allowed to be made.  
+The actual game logic will be handled in rust, here it will parse json objects passed on by python, parse them into Rust structs and execute the needed logic upon it  
 
 ## Custom protocol
 
@@ -36,10 +33,11 @@ Files in static gets cached, files in non static gets sent on each request
 
 # Todo
 
+### Lua  
+Remove all instances of LUA code, it will be phased out with all rust.  
 
-### Lua-Rust
-Start Rust backend for the chess game  
-Finish lua cli for chess game  
+### Rust
+Finish Rust backend + cli for the chess game    
 
 ### Font end
 Complete frontend for tha game page js/html/css  

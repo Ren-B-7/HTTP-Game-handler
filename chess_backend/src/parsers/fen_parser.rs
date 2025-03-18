@@ -12,20 +12,88 @@ pub struct Gamestate {
 }
 impl Gamestate {
     pub fn new() -> Self {
-        Gamestate { 
-            board: [[' '; 8]; 8], 
-            player: 'w', 
-            castling: ('-', '-', '-', '-'), 
-            enpassat: None, 
-            halfmove: 0, 
-            fullmove: 1 
+        Gamestate {
+            board: [[' '; 8]; 8],
+            player: 'w',
+            castling: ('-', '-', '-', '-'),
+            enpassat: None,
+            halfmove: 0,
+            fullmove: 1,
         }
+    }
+
+    pub fn to_fen(self: &Self) -> String {
+        let mut fen = String::new();
+        for rank in (0usize..8).rev() {
+            let mut empty: u8 = 0;
+            for file in 0usize..8 {
+                match self.board[rank][file] {
+                    ' ' => {
+                        empty += 1;
+                    }
+                    _ => {
+                        if empty > 0 {
+                            fen.push_str(&empty.to_string());
+                            empty = 0;
+                        }
+                        fen.push(self.board[rank][file]);
+                    }
+                }
+            }
+            if empty > 0 {
+                fen.push_str(&empty.to_string());
+            };
+            if rank > 0 {
+                fen.push('/');
+            };
+        }
+        // Turn
+        fen.push(' ');
+        fen.push(self.player);
+
+        // Castling rights
+        fen.push(' ');
+        let (wk, wq, bk, bq) = self.castling;
+        let mut castling = String::new();
+        if wk != '-' {
+            castling.push('K');
+        }
+        if wq != '-' {
+            castling.push('Q');
+        }
+        if bk != '-' {
+            castling.push('k');
+        }
+        if bq != '-' {
+            castling.push('q');
+        }
+        if castling.is_empty() {
+            castling.push('-');
+        }
+        fen.push_str(&castling);
+
+        // En passant target
+        fen.push(' ');
+        if let Some((file, rank)) = self.enpassat {
+            fen.push((b'a' + file) as char);
+            fen.push((b'1' + rank) as char);
+        } else {
+            fen.push('-');
+        }
+
+        // Halfmove clock & Fullmove number
+        fen.push(' ');
+        fen.push_str(&self.halfmove.to_string());
+        fen.push(' ');
+        fen.push_str(&self.fullmove.to_string());
+
+        fen
     }
 }
 
 impl FromStr for Gamestate {
     type Err = String;
-    
+
     fn from_str(fen: &str) -> Result<Self, Self::Err> {
         let parts: Vec<&str> = fen.split_whitespace().collect();
         if parts.len() != 6 {
@@ -36,8 +104,12 @@ impl FromStr for Gamestate {
         let player: char = parts[1].chars().next().ok_or("Invalid player turn")?;
         let castling: (char, char, char, char) = parse_castling(parts[2]);
         let enpassant: Option<(u8, u8)> = parse_enpassant(parts[3])?;
-        let halfmove: u8 = parts[4].parse::<u8>().map_err(|_| "Invalid halfmove clock")?;
-        let fullmove: u16 = parts[5].parse::<u16>().map_err(|_| "Invalid fullmove number")?;
+        let halfmove: u8 = parts[4]
+            .parse::<u8>()
+            .map_err(|_| "Invalid halfmove clock")?;
+        let fullmove: u16 = parts[5]
+            .parse::<u16>()
+            .map_err(|_| "Invalid fullmove number")?;
 
         Ok(Gamestate {
             board,
@@ -53,7 +125,7 @@ impl FromStr for Gamestate {
 fn parse_board(board_str: &str) -> Result<[[char; 8]; 8], String> {
     let mut board: [[char; 8]; 8] = [[' '; 8]; 8];
     let rows: Vec<&str> = board_str.split('/').collect();
-    
+
     if rows.len() != 8 {
         return Err("Invalid board format".to_string());
     }

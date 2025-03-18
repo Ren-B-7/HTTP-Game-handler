@@ -1,7 +1,6 @@
 use super::pieces::{bishop, king, knight, pawn, queen, rook};
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
 
 pub fn get_legal_moves(
     board: &[[char; 8]; 8],
@@ -9,15 +8,13 @@ pub fn get_legal_moves(
     castling: (char, char, char, char),
     player: char,
 ) -> Vec<((u8, u8), (u8, u8))> {
-    let now: Instant = Instant::now();
-
     let king_position: Arc<Mutex<(u8, u8)>> = Arc::new(Mutex::new((10, 10))); // Shared king position
 
     // First pass: Locate the king
     (0usize..8).into_par_iter().for_each(|rank: usize| {
         (0usize..8).into_par_iter().for_each(|file: usize| {
             let piece: char = board[rank][file];
-            if piece == ' ' || piece.is_uppercase() != (player == 'W') {
+            if piece == ' ' || piece.is_uppercase() != (player == 'w') {
                 return;
             }
             if piece.to_ascii_lowercase() == 'k' {
@@ -51,7 +48,7 @@ pub fn get_legal_moves(
                 'k' => king::get_possible_moves(from, board, castling),
                 _ => return,
             };
-            if piece.is_uppercase() != (player == 'W') {
+            if piece.is_uppercase() != (player == 'w') {
                 // Enemy piece: check if it attacks the king
                 let attack_paths: Vec<Vec<(u8, u8)>> = move_directions
                     .iter()
@@ -123,10 +120,6 @@ pub fn get_legal_moves(
         })
         .collect();
 
-    println!(
-        "Time to calculate possible moves (micro seconds): {:.3?} ms",
-        now.elapsed().as_micros()
-    );
     filtered_moves
 }
 
@@ -140,7 +133,7 @@ fn is_square_attacked(
         (0u8..8).into_par_iter().any(|file: u8| -> bool {
             let piece: char = board[rank as usize][file as usize];
             let from: (u8, u8) = (rank, file);
-            if piece == ' ' || piece.is_uppercase() == (player == 'W') {
+            if piece == ' ' || piece.is_uppercase() == (player == 'w') {
                 return false;
             }
 

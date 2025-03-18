@@ -2,7 +2,7 @@
 /// Converts a chess notation string (e.g. "e2") to an index pair (e.g. (1, 4)).
 ///
 /// The returned `(row, col)` is 0-indexed, with the following layout:
-pub fn chess_notation_to_index(notation: &str) -> Option<(usize, usize)> {
+pub fn chess_notation_to_index(notation: &str) -> Option<(u8, u8)> {
     if notation.len() != 2 {
         return None;
     }
@@ -18,7 +18,7 @@ pub fn chess_notation_to_index(notation: &str) -> Option<(usize, usize)> {
     let col: usize = (file as u8 - b'a') as usize; // 'a' -> 0, 'b' -> 1, ..., 'h' -> 7
     let row: usize = 8 - (rank as u8 - b'1') as usize - 1; // '8' -> 0, '7' -> 1, ..., '1' -> 7
 
-    Some((row, col))
+    Some((row as u8, col as u8))
 }
 
 pub fn index_to_chess_notation(position: (u8, u8)) -> Option<String> {

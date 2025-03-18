@@ -1,8 +1,12 @@
+use parsers::{
+    fen_parser::Gamestate,
+    notation::*,
+    parse_error::*,
+    parse_input::{read_and_parse_input, JsonIn},
+};
 use std::env;
-use parsers::fen_parser::Gamestate;
-use parsers::parse_input::{JsonOut, read_and_parse_input};
+use std::time::Instant;
 use validation::board_validation::validate_board;
-use parsers::notation::index_to_chess_notation;
 use validation::possible_moves::get_legal_moves;
 
 // Author: Renier Barnard
@@ -11,38 +15,138 @@ mod validation;
 
 fn cli() {
     loop {
-        let input: JsonOut = match read_and_parse_input() {
-            Ok(input) => {
-                input
-            },
+        let input: JsonIn = match read_and_parse_input() {
+            Ok(input) => input,
             Err(e) => {
-                println!("Error: {}", e);
+                ParseError::new(&*e, &Gamestate::new()).print_stderr();
                 continue;
             }
         };
-        if input.reason == "exit" {break;}
+        let now: Instant = Instant::now();
+        if input.reason == "exit" {
+            break;
+        }
 
         if input.reason == "ping" {
             println!("pong");
             continue;
         }
 
-        let game: Gamestate = input.state;
+        let mut game: Gamestate = input.state;
         if input.reason == "start" {
-            
         } else if input.reason == "move" {
-            
-        } else if input.reason == "validate" {
-            if validate_board(&game.board) {
-                println!("Board is valid");
+            let moves: ((u8, u8), (u8, u8)) = match input.moves.split_once('-') {
+                Some((from, to)) => (
+                    chess_notation_to_index(from).expect("Invalid move notation"),
+                    chess_notation_to_index(to).expect("Invalid move notation"),
+                ),
+                None => ((0, 0), (0, 0)),
+            };
+
+            let enpassat: (u8, u8) = game.enpassat.unwrap_or((0, 0));
+            if get_legal_moves(&game.board, enpassat, game.castling, game.player).contains(&moves) {
+                let piece: char = game.board[moves.0 .0 as usize][moves.0 .1 as usize];
+                let target: char = game.board[moves.1 .0 as usize][moves.1 .1 as usize];
+
+                game.board[moves.1 .0 as usize][moves.1 .1 as usize] = piece;
+                game.board[moves.0 .0 as usize][moves.0 .1 as usize] = ' ';
+
+                if piece.to_ascii_lowercase() == 'p' || target != ' ' {
+                    game.halfmove = 0;
+                } else {
+                    game.halfmove += 1;
+                }
+
+                if piece.to_ascii_lowercase() == 'p' {
+                    if (moves.0 .0 as i8 - moves.1 .0 as i8).abs() == 2 {
+                        game.enpassat = Some(((moves.0 .0 + moves.1 .0) / 2, moves.0 .1));
+                    } else if moves.1 == enpassat {
+                        game.board[moves.0 .0 as usize][moves.1 .1 as usize] = ' ';
+                    }
+                } else {
+                    game.enpassat = None;
+                };
+
+                if piece == 'K' && moves.0 == (7, 4) {
+                    game.castling.0 = '-';
+                    game.castling.1 = '-';
+                    match moves.1 {
+                        (7, 6) => {
+                            game.board[7][5] = game.board[7][7];
+                            game.board[7][7] = ' ';
+                        }
+                        (7, 2) => {
+                            game.board[7][3] = game.board[7][0];
+                            game.board[7][0] = ' ';
+                        }
+                        _ => {}
+                    }
+                } else if piece == 'k' && moves.0 == (0, 4) {
+                    game.castling.2 = '-';
+                    game.castling.3 = '-';
+                    match moves.1 {
+                        (0, 6) => {
+                            game.board[0][5] = game.board[0][7];
+                            game.board[0][7] = ' ';
+                        }
+                        (0, 2) => {
+                            game.board[0][3] = game.board[0][0];
+                            game.board[0][0] = ' ';
+                        }
+                        _ => {}
+                    }
+                } else if piece == 'R' {
+                    match moves.0 {
+                        (7, 0) => game.castling.0 = '-',
+                        (7, 7) => game.castling.1 = '-',
+                        _ => (),
+                    };
+                } else if piece == 'r' {
+                    match moves.0 {
+                        (0, 0) => game.castling.2 = '-',
+                        (0, 7) => game.castling.3 = '-',
+                        _ => (),
+                    };
+                };
+                game.player = if game.player == 'w' {
+                    'b'
+                } else {
+                    game.fullmove += 1;
+                    'w'
+                };
+            } else {
+                ParseError::new(
+                    std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "Illegal move made, skipping move",
+                    ),
+                    &game,
+                )
+                .print_stderr();
             }
+        } else if input.reason == "validate" {
+            if !validate_board(&game.board) {
+                ParseError::new(
+                    std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "Illegal move made, skipping move",
+                    ),
+                    &game,
+                )
+                .print_stderr();
+                continue;
+            };
         }
 
         let legal_moves: Vec<((u8, u8), (u8, u8))> =
             if input.reason == "validate" || input.reason == "move" {
-                get_legal_moves(&game.board, game.enpassat.unwrap_or((0, 0)), game.castling, game.player)
-            }
-            else {
+                get_legal_moves(
+                    &game.board,
+                    game.enpassat.unwrap_or((0, 0)),
+                    game.castling,
+                    game.player,
+                )
+            } else {
                 Vec::new()
             };
 
@@ -55,7 +159,10 @@ fn cli() {
                 }
             })
             .collect::<Vec<_>>();
-        println!("Legal moves: {:?}", legal_moves);
+        println!(
+            "Time to calculate possible moves (micro seconds): {:.3?} ms",
+            now.elapsed().as_micros()
+        );
     }
 }
 
@@ -67,7 +174,8 @@ fn main() {
     }
     let mut file: String = String::new();
     let mut skip: bool = false;
-    let (mut cli_mode, mut test, mut no_print, mut verbose): (bool, bool, bool, u8) = (false, false, false, 0);
+    let (mut cli_mode, mut test, mut no_print, mut verbose): (bool, bool, bool, u8) =
+        (false, false, false, 0);
     for v in args.iter() {
         if skip {
             skip = false;
@@ -78,30 +186,28 @@ fn main() {
                 println!("Usage: chess [options]");
                 println!("commands:");
                 println!("\t -h \t --help \t: Prints this help message: Default = true");
-                println!("\t -c \t --cli \t: To enable the JSP mode for cli usage; Default = false");
+                println!(
+                    "\t -c \t --cli \t: To enable the JSP mode for cli usage; Default = false"
+                );
                 println!("\t -o \t --output \t: Saves the output to a file; Defualt = None");
                 println!("\t -n \t --no-print \t: Does not print to command line. For use with --output; Default = false");
                 println!("\t -t \t --test \t: Runs the test suite: Default = False");
                 println!("\t -v \t --verbose \t: Uses more verbose messaging (0-4): Default = 0");
                 println!("\t \t \t 4 - Debug \t 3 - Info \t 2 - Warning \t 1 - Error \t 0 - Fatal");
             }
-            "--test" | "-t" => {
-                test = true
-            },
+            "--test" | "-t" => test = true,
             "--output" | "-o" => {
                 skip = true;
                 file = args[args.iter().position(|x: &String| x == v).unwrap() + 1].clone()
-            },
+            }
             "--verbose" | "-v" => {
                 skip = true;
-                verbose = args[args.iter().position(|x: &String| x == v).unwrap() + 1].parse().unwrap()
-            },
-            "--cli" | "-c" => {
-                cli_mode = true
-            },
-            "--no-print" | "-n" => {
-                no_print = true
-            },
+                verbose = args[args.iter().position(|x: &String| x == v).unwrap() + 1]
+                    .parse()
+                    .unwrap()
+            }
+            "--cli" | "-c" => cli_mode = true,
+            "--no-print" | "-n" => no_print = true,
             _ => (),
         }
     }
@@ -112,5 +218,5 @@ fn main() {
     if verbose > 0 {}
     if cli_mode {
         cli()
-    } 
+    }
 }

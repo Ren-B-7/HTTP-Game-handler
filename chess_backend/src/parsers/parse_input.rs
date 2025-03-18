@@ -1,27 +1,27 @@
 use super::fen_parser::Gamestate;
-use std::{io, str::FromStr};
-use serde_json::from_str;
 use serde::{Deserialize, Serialize};
+use serde_json::from_str;
+use std::{io, str::FromStr};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct JsonInput {
     pub reason: String,
     pub fen: String,
-    pub moves: String
+    pub moves: String,
 }
 
 #[derive(Debug)]
-pub struct JsonOut {
+pub struct JsonIn {
     pub reason: String,
     pub state: Gamestate,
-    pub moves: String
+    pub moves: String,
 }
 
-pub fn read_and_parse_input() -> Result<JsonOut, Box<dyn std::error::Error>> {
+pub fn read_and_parse_input() -> Result<JsonIn, Box<dyn std::error::Error>> {
     let mut stdin: String = String::new();
     io::stdin().read_line(&mut stdin)?;
 
-    let input: JsonInput = from_str(&stdin).unwrap();
+    let input: JsonInput = from_str(&stdin).map_err(|e| Box::<dyn std::error::Error>::from(e))?;
 
     // Parse the FEN string into a Gamestate
     let state: Gamestate = if input.reason == "move" || input.reason == "validate" {
@@ -35,9 +35,9 @@ pub fn read_and_parse_input() -> Result<JsonOut, Box<dyn std::error::Error>> {
         String::new()
     };
 
-    Ok(JsonOut {
+    Ok(JsonIn {
         reason: input.reason,
         state,
-        moves
+        moves,
     })
 }

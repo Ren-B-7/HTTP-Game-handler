@@ -43,43 +43,62 @@ pub fn get_possible_moves(
             let piece_is_uppercase: bool = piece.is_uppercase();
             if piece != ' ' && piece_is_uppercase != from_piece_is_uppercase {
                 positions.push((x, y));
-            }
+            };
         }
     }
     let (x, y): (u8, u8) = from;
     let from_piece_is_uppercase: bool = board[x as usize][y as usize].is_uppercase();
-    let mut positions_enpassat: Vec<(u8, u8)> = Vec::new();
+    let mut positions_attack: Vec<(u8, u8)> = Vec::new();
     let mut positions_regular: Vec<(u8, u8)> = Vec::new();
+
+    let mut new_x: u8 = x;
 
     if from_piece_is_uppercase {
         // White pawns move UP (-1)
         if x == 6 {
             add_pawn_move_regular(x - 2, y, &mut positions_regular, board);
-        }
+        };
         if x > 0 {
-            let new_x = x - 1;
-            add_pawn_move_regular(new_x, y, &mut positions_regular, board);
-            if y > 0 {
-                add_pawn_move_capture(new_x, y - 1, &mut positions_enpassat, board, true);
-            }
-            if y < 7 {
-                add_pawn_move_capture(new_x, y + 1, &mut positions_enpassat, board, true);
-            }
+            new_x = x - 1
         }
     } else {
         if x == 1 {
             add_pawn_move_regular(x + 2, y, &mut positions_regular, board);
-        }
+        };
         if x < 7 {
-            let new_x = x + 1;
-            add_pawn_move_regular(new_x, y, &mut positions_regular, board);
-            if y > 0 {
-                add_pawn_move_capture(new_x, y - 1, &mut positions_enpassat, board, false);
-            }
-            if y < 7 {
-                add_pawn_move_capture(new_x, y + 1, &mut positions_enpassat, board, false);
+            new_x = x + 1
+        }
+    };
+
+    add_pawn_move_regular(new_x, y, &mut positions_regular, board);
+    if y > 0 {
+        add_pawn_move_capture(
+            new_x,
+            y - 1,
+            &mut positions_attack,
+            board,
+            from_piece_is_uppercase,
+        );
+        if new_x == enpassat.0 {
+            if y - 1 == enpassat.1 {
+                positions_attack.push((new_x, y - 1))
             }
         }
-    }
-    vec![positions_enpassat, positions_regular]
+    };
+    if y < 7 {
+        add_pawn_move_capture(
+            new_x,
+            y + 1,
+            &mut positions_attack,
+            board,
+            from_piece_is_uppercase,
+        );
+        if new_x == enpassat.0 {
+            if y + 1 == enpassat.1 {
+                positions_attack.push((new_x, y + 1))
+            }
+        }
+    };
+
+    vec![positions_attack, positions_regular]
 }

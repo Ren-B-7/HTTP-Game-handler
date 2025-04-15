@@ -3,9 +3,9 @@ use parsers::{
     notation::*,
     parse_error::*,
     parse_input::{read_and_parse_input, JsonIn},
+    parse_output::*,
 };
 use std::env;
-use std::time::Instant;
 use validation::board_validation::validate_board;
 use validation::possible_moves::get_legal_moves;
 
@@ -22,7 +22,6 @@ fn cli() {
                 continue;
             }
         };
-        let now: Instant = Instant::now();
         if input.reason == "exit" {
             break;
         }
@@ -32,8 +31,11 @@ fn cli() {
             continue;
         }
 
+        let mut message: &str = "";
+
         let mut game: Gamestate = input.state;
         if input.reason == "start" {
+            message = "valid";
         } else if input.reason == "move" {
             let moves: ((u8, u8), (u8, u8)) = match input.moves.split_once('-') {
                 Some((from, to)) => (
@@ -114,6 +116,8 @@ fn cli() {
                     game.fullmove += 1;
                     'w'
                 };
+                // Or check/ checkmate
+                message = "valid";
             } else {
                 ParseError::new(
                     std::io::Error::new(
@@ -127,15 +131,13 @@ fn cli() {
         } else if input.reason == "validate" {
             if !validate_board(&game.board) {
                 ParseError::new(
-                    std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "Illegal move made, skipping move",
-                    ),
+                    std::io::Error::new(std::io::ErrorKind::Other, "Board not legal"),
                     &game,
                 )
                 .print_stderr();
                 continue;
-            };
+            }
+            message = "valid";
         }
 
         let legal_moves: Vec<((u8, u8), (u8, u8))> =
@@ -150,19 +152,16 @@ fn cli() {
                 Vec::new()
             };
 
-        let legal_moves: Vec<(String, String)> = legal_moves
+        let legal_moves: Vec<String> = legal_moves
             .into_iter()
             .filter_map(|(x, y): ((u8, u8), (u8, u8))| {
                 match (index_to_chess_notation(x), index_to_chess_notation(y)) {
-                    (Some(from), Some(to)) => Some((from, to)),
+                    (Some(from), Some(to)) => Some(format!("{}-{}", from, to)),
                     _ => None,
                 }
             })
             .collect::<Vec<_>>();
-        println!(
-            "Time to calculate possible moves (micro seconds): {:.3?} ms",
-            now.elapsed().as_micros()
-        );
+        ParseOut::new(message.to_string(), &game, legal_moves).print_stdout();
     }
 }
 

@@ -1,8 +1,7 @@
 use super::fen_parser::Gamestate;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::error::Error;
-use std::fmt;
+use std::{error::Error, fmt};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ParseError {
@@ -23,10 +22,6 @@ impl ParseError {
             "error": self.error,
             "fen": self.fen
         })
-    }
-
-    pub fn print_stdout(&self) {
-        println!("{}", self.to_json());
     }
 
     pub fn print_stderr(&self) {

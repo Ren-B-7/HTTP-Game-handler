@@ -1,0 +1,127 @@
+/* Home page specific styles - Light mode */
+
+/* ELO Badge - Clean card style */
+.elo-badge {
+  background: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  padding: 16px 32px;
+  margin-bottom: 40px;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.elo-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.elo-badge span {
+  color: var(--accent-color);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+/* Search controls row */
+.search-row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.search-row .button {
+  flex: 1;
+  min-width: 140px;
+  padding: 14px 24px;
+  font-size: 1.05rem;
+}
+
+/* Cancel button variant */
+.button-cancel {
+  background: linear-gradient(135deg, #757575, #616161);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.button-cancel:hover {
+  background: linear-gradient(135deg, #858585, #717171);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Status text with subtle animation */
+.status-text {
+  margin-top: 24px;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  min-height: 1.5em;
+  text-align: center;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.status-text.searching {
+  color: var(--accent-color);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Feedback messages */
+#error-message,
+#success-message {
+  display: none;
+  margin-top: 20px;
+  text-align: center;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+}
+
+#error-message {
+  color: var(--danger-color);
+  background: rgba(211, 47, 47, 0.06);
+  border: 1px solid rgba(211, 47, 47, 0.15);
+}
+
+#success-message {
+  color: var(--success-color);
+  background: rgba(46, 125, 50, 0.06);
+  border: 1px solid rgba(46, 125, 50, 0.15);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .elo-badge {
+    padding: 14px 24px;
+    font-size: 1rem;
+  }
+
+  .search-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .search-row .button {
+    min-width: 100%;
+  }
+}

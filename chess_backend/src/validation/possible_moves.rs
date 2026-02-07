@@ -71,9 +71,9 @@ pub fn get_legal_moves(
             // Friendly piece: add to move list
             let mut pos_lock: std::sync::MutexGuard<'_, Vec<((u8, u8), (u8, u8))>> =
                 positions.lock().expect("Mutex poisoned");
-            pos_lock.extend(
+            pos_lock.par_extend(
                 move_directions
-                    .into_iter()
+                    .into_par_iter()
                     .flatten()
                     .map(|to: (u8, u8)| (from, to)),
             );

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-page="login">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Player Login</title>
+
+    <!-- Choose between light and dark mode -->
+    <script>
+      (function () {
+        if (!localStorage.getItem("theme")) {
+          const prefersDark = matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          localStorage.setItem("theme", prefersDark ? "dark" : "light");
+        }
+
+        const theme = localStorage.getItem("theme") || "dark";
+        const page = document.documentElement.dataset.page;
+
+        const styles = [
+          `static/body/body.${theme}.css`,
+          `static/username-password/auth-forms.${theme}.css`,
+        ].filter(Boolean);
+
+        for (const href of styles) {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = href;
+          document.head.appendChild(link);
+        }
+      })();
+    </script>
+
+    <script src="static/loading/loading.js"></script>
+
+    <script defer src="non-static/login/login.js"></script>
+    <script defer src="static/time/current-time.js"></script>
+    <script defer src="static/toggle-password/password.js"></script>
+  </head>
+
+  <body>
+    <div id="loading">Loading...</div>
+
+    <form id="loginForm" action="/login" method="POST">
+      <div class="container">
+        <div class="inner-container">
+          <div class="multi-row-container">
+            <div class="text">Login</div>
+            <a class="other">
+              <div id="current-time"></div>
+            </a>
+          </div>
+
+          <!-- Username -->
+          <div class="username-row">
+            <label class="username" for="username">Username</label>
+            <div class="username-box">
+              <input
+                type="text"
+                id="username"
+                name="username"
+                autocomplete="username"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Password with eye -->
+          <div class="password-row">
+            <label class="password" for="password">Password</label>
+            <div class="password-container" data-password-toggle>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                autocomplete="current-password"
+                required
+              />
+
+              <button
+                type="button"
+                class="eye-icon"
+                id="eye-icon"
+                aria-label="Toggle password visibility"
+              >
+                <img src="/icons/eye_slash.svg" alt="" class="eye-img" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages -->
+          <div
+            id="error-message"
+            style="color: #ff5555; display: none; margin-bottom: 8px"
+          ></div>
+
+          <div
+            id="success-message"
+            style="color: #50fa7b; display: none; margin-bottom: 8px"
+          ></div>
+
+          <!-- Buttons -->
+          <div class="button-row">
+            <!-- ONLY this submits -->
+            <button type="submit" class="button" id="login-button">
+              Login
+            </button>
+
+            <!-- Navigation only -->
+            <button type="button" class="button" id="register-button">
+              Register
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </body>
+</html>

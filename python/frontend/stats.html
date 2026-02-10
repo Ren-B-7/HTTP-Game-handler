@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en" data-page="stats">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Stats - Chess Game</title>
+
+    <!-- Choose between light and dark mode -->
+    <script>
+      (function () {
+        if (!localStorage.getItem("theme")) {
+          const prefersDark = matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          localStorage.setItem("theme", prefersDark ? "dark" : "light");
+        }
+
+        const theme = localStorage.getItem("theme") || "dark";
+        const page = document.documentElement.dataset.page;
+
+        const styles = [
+          `static/body/body.${theme}.css`,
+          `static/top-nav/nav.${theme}.css`,
+          page && `static/${page}/${page}.${theme}.css`,
+        ].filter(Boolean);
+
+        for (const href of styles) {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = href;
+          document.head.appendChild(link);
+        }
+      })();
+    </script>
+
+    <script src="static/loading/loading.js"></script>
+
+    <script defer src="static/top-nav/nav.js"></script>
+    <script defer src="non-static/stats/stats.js"></script>
+  </head>
+  <body>
+    <div id="loading">Loading...</div>
+
+    <!-- Top navigation bar -->
+    <div class="nav-menu">
+      <button class="button" id="home-btn">Home</button>
+      <button class="button" id="stats-btn" disabled>My Stats</button>
+      <button class="button" id="profile-btn">Profile</button>
+      <button class="button" id="logout-btn">Logout</button>
+    </div>
+
+    <div class="container">
+      <!-- Stats Container -->
+      <div class="stats-container">
+        <!-- Player Information -->
+        <div class="player-info">
+          <div class="player-name">
+            <label id="player-name">Loading</label>
+          </div>
+          <div class="player-elo">
+            <label id="elo">—</label>
+          </div>
+        </div>
+
+        <!-- Stats Row: Wins, Ties, Losses -->
+        <div class="stats-row">
+          <div class="wins">
+            <label>Wins:</label>
+            <label id="wins">—</label>
+          </div>
+          <div class="draws">
+            <label>Draws:</label>
+            <label id="draws">—</label>
+          </div>
+          <div class="losses">
+            <label>Losses:</label>
+            <label id="losses">—</label>
+          </div>
+        </div>
+
+        <!-- Additional Info Row: Games Played, Last Played -->
+        <div class="games-info">
+          <div class="games-played">
+            <label>Games Played:</label>
+            <label id="games-played">—</label>
+          </div>
+          <div class="last-played">
+            <label>Last Played:</label>
+            <label id="last-played">—</label>
+          </div>
+          <div class="date-joined">
+            <label>Date Joined:</label>
+            <label id="date-joined">—</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

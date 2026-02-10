@@ -1,0 +1,571 @@
+/* Chess Game - Dark Theme Styles */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Layout & Containers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.game-container {
+  display: flex;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.board-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Chess Board
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#board1 {
+  display: block;
+  margin: 20px auto;
+  background: rgba(68, 68, 68, 0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  width: min(70vw, 600px);
+  height: min(70vw, 600px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Side Panels (Player Info & Move History)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.game-panel {
+  width: 280px;
+  background: rgba(42, 42, 42, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.game-panel h2 {
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Player Info Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.player-panel {
+  /* Uses .game-panel base styles */
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.player:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.player.you {
+  border: 2px solid #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.player-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.player-color {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.color-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  margin-right: 8px;
+}
+
+.color-indicator.white {
+  background: #fff;
+}
+
+.color-indicator.black {
+  background: #333;
+}
+
+.vs {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 8px 0;
+}
+
+.player-placeholder {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Move History Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.history-panel {
+  /* Uses .game-panel base styles */
+}
+
+.move-history {
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  padding-right: 8px;
+}
+
+/* Custom scrollbar for move history */
+.move-history::-webkit-scrollbar {
+  width: 8px;
+}
+
+.move-history::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.move-history::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.move-history::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.move-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.move-pair {
+  display: flex;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.move-pair:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.move-number {
+  min-width: 30px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+
+.move {
+  flex: 1;
+  padding: 2px 4px;
+  font-weight: 500;
+}
+
+.white-move {
+  color: #4CAF50;
+}
+
+.black-move {
+  color: #2196F3;
+}
+
+.no-moves {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Game Status & Controls
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.game-status {
+  margin: 16px 0;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.game-status.info {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196F3;
+  border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+.game-status.success {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.game-status.error {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.game-controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.game-controls .button {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #444, #333);
+  color: white;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.game-controls .button:hover {
+  background: linear-gradient(135deg, #555, #444);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.game-controls .button:active {
+  transform: translateY(0);
+}
+
+.button-danger {
+  background: linear-gradient(135deg, #f44336, #d32f2f) !important;
+}
+
+.button-danger:hover {
+  background: linear-gradient(135deg, #e53935, #c62828) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Game Over Modal
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal[style*="flex"] {
+  opacity: 1;
+}
+
+.modal-content {
+  background: rgba(42, 42, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal[style*="flex"] .modal-content {
+  transform: scale(1) translateY(0);
+}
+
+.dialog-title {
+  margin: 0 0 16px 0;
+  font-size: 2rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.dialog-message {
+  margin: 0 0 24px 0;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  opacity: 0.9;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.button-row .button {
+  flex: 1;
+  max-width: 200px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Responsive Design
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1200px) {
+  .game-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .game-panel {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  #board1 {
+    width: min(90vw, 600px);
+    height: min(90vw, 600px);
+  }
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    padding: 0 12px;
+    gap: 16px;
+  }
+
+  .game-panel {
+    padding: 16px;
+  }
+
+  .game-panel h2 {
+    font-size: 1.1rem;
+  }
+
+  .game-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .game-controls .button {
+    width: 100%;
+  }
+
+  .modal-content {
+    padding: 24px;
+    margin: 0 16px;
+  }
+
+  .dialog-title {
+    font-size: 1.6rem;
+  }
+
+  .dialog-message {
+    font-size: 1rem;
+  }
+
+  .button-row {
+    flex-direction: column;
+  }
+
+  .button-row .button {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .player-name {
+    font-size: 1rem;
+  }
+
+  .player-color {
+    font-size: 0.85rem;
+  }
+
+  .move-history {
+    max-height: 300px;
+  }
+}
+/* Draw Dialog Styles - Dark Theme */
+/* Add these styles to game.dark.css */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Draw Offer Dialog
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.draw-modal {
+  position: relative;
+  overflow: visible;
+}
+
+.draw-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(33, 150, 243, 0.1));
+  border: 2px solid rgba(33, 150, 243, 0.4);
+  border-radius: 50%;
+  color: #2196F3;
+  animation: pulse-icon 2s ease-in-out infinite;
+}
+
+.draw-icon-sent {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(255, 152, 0, 0.1));
+  border-color: rgba(255, 152, 0, 0.4);
+  color: #FF9800;
+}
+
+@keyframes pulse-icon {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
+  }
+}
+
+.draw-icon svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.draw-subtitle {
+  display: block;
+  margin-top: 8px;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Button variants for draw dialog */
+.button-success {
+  background: linear-gradient(135deg, #4CAF50, #388E3C) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+}
+
+.button-success:hover {
+  background: linear-gradient(135deg, #66BB6A, #4CAF50) !important;
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
+}
+
+.button-secondary {
+  background: linear-gradient(135deg, #555, #444) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(85, 85, 85, 0.3) !important;
+}
+
+.button-secondary:hover {
+  background: linear-gradient(135deg, #666, #555) !important;
+  box-shadow: 0 6px 20px rgba(85, 85, 85, 0.4) !important;
+}
+
+/* Draw dialog specific animations */
+.modal#draw-offer-dialog[style*="flex"] .modal-content,
+.modal#draw-sent-dialog[style*="flex"] .modal-content {
+  animation: slideInBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideInBounce {
+  0% {
+    transform: scale(0.7) translateY(-50px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05) translateY(0);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Waiting state indicator */
+.draw-modal .dialog-message {
+  position: relative;
+}
+
+#draw-sent-dialog .dialog-message::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-left: 4px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+/* Responsive adjustments for draw dialog */
+@media (max-width: 480px) {
+  .draw-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+  
+  .draw-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .draw-subtitle {
+    font-size: 0.9rem;
+  }
+}

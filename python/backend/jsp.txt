@@ -1,0 +1,13 @@
+Json game protocol description:
+
+{
+    "error": "", // A message to pass to the server, if it is "terminate", the game server will be terminated
+    "winner": "" // "player1" or "player2", the winner of the game
+    "Further arguments": { // Passed on to the game server as is with no parsing
+        "Game state": "", // This would be a FEN string representing the game state
+        "move": "", // For chess, this will be the move made
+        "next player": "", // "player1" or "player2", indicating whose move it is next
+        "legal next moves": [] // An array of legal moves that can be made by the next player
+    },
+}
+

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en" data-page="profile">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Profile - Chess Game</title>
+
+    <!-- Theme detection and CSS loading -->
+    <script>
+      (function () {
+        if (!localStorage.getItem("theme")) {
+          const prefersDark = matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          localStorage.setItem("theme", prefersDark ? "dark" : "light");
+        }
+
+        const theme = localStorage.getItem("theme") || "dark";
+        const page = document.documentElement.dataset.page;
+
+        const styles = [
+          `static/body/body.${theme}.css`,
+          `static/top-nav/nav.${theme}.css`,
+          `static/username-password/auth-forms.${theme}.css`,
+          page && `static/${page}/${page}.${theme}.css`,
+        ].filter(Boolean);
+
+        for (const href of styles) {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = href;
+          document.head.appendChild(link);
+        }
+      })();
+    </script>
+
+    <script src="static/loading/loading.js"></script>
+
+    <script defer src="static/username-password/password-strength.js"></script>
+    <script defer src="static/top-nav/nav.js"></script>
+    <script defer src="static/theme/theme.js"></script>
+    <script defer src="non-static/profile/profile.js"></script>
+    <script defer src="static/toggle-password/password.js"></script>
+  </head>
+  <body>
+    <div id="loading">Loading...</div>
+
+    <!-- Top navigation bar with theme toggle -->
+    <div class="nav-menu">
+      <button class="button" id="home-btn">Home</button>
+      <button class="button" id="stats-btn">My Stats</button>
+      <button class="button" id="profile-btn" disabled>Profile</button>
+
+      <!-- Theme Toggle Button -->
+      <button
+        class="button theme-toggle"
+        id="theme-toggle-btn"
+        type="button"
+      ></button>
+
+      <button class="button" id="logout-btn">Logout</button>
+    </div>
+
+    <div class="container">
+      <div class="inner-container">
+        <h1>Edit Profile</h1>
+
+        <!-- Current username display -->
+        <div class="profile-section">
+          <div class="section-label">Current Username</div>
+          <div class="current-value" id="current-username">—</div>
+        </div>
+
+        <!-- Change username form -->
+        <form id="username-form" class="profile-form">
+          <h2>Change Username</h2>
+
+          <div class="username-row">
+            <label class="username" for="new-username">New Username</label>
+            <div class="username-box">
+              <input
+                type="text"
+                id="new-username"
+                name="new_username"
+                autocomplete="username"
+                minlength="3"
+                maxlength="20"
+              />
+            </div>
+          </div>
+
+          <div class="password-row">
+            <label class="password" for="password-username"
+              >Confirm Password</label
+            >
+            <div class="password-container" data-password-toggle>
+              <input
+                type="password"
+                id="password-username"
+                name="password"
+                autocomplete="current-password"
+                required
+              />
+
+              <button
+                type="button"
+                class="eye-icon"
+                id="eye-icon"
+                aria-label="Toggle password visibility"
+              >
+                <img src="/icons/eye_slash.svg" alt="" class="eye-img" />
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="button">Update Username</button>
+
+          <div class="form-message" id="username-error"></div>
+          <div class="form-message success" id="username-success"></div>
+        </form>
+
+        <!-- Change password form -->
+        <form id="password-form" class="profile-form">
+          <h2>Change Password</h2>
+
+          <!-- Hidden so password managers know what to do -->
+          <div class="username-box">
+            <input
+              type="text"
+              id="username-hidden-password"
+              name="username"
+              autocomplete="username"
+              hidden
+            />
+          </div>
+
+          <div class="password-row">
+            <label class="password" for="current-password"
+              >Current Password</label
+            >
+            <div class="password-container" data-password-toggle>
+              <input
+                type="password"
+                id="current-password"
+                name="current-password"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                class="eye-icon"
+                aria-label="Toggle password visibility"
+              >
+                <img src="/icons/eye_slash.svg" alt="" class="eye-img" />
+              </button>
+            </div>
+          </div>
+
+          <div class="password-row">
+            <label class="password" for="new-password">New Password</label>
+            <div class="password-container" data-password-toggle>
+              <input
+                type="password"
+                id="new-password"
+                name="new-password"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                class="eye-icon"
+                aria-label="Toggle password visibility"
+              >
+                <img src="/icons/eye_slash.svg" alt="" class="eye-img" />
+              </button>
+            </div>
+            <div id="password-strength"></div>
+          </div>
+
+          <div class="password-row">
+            <label class="password" for="confirm-new-password"
+              >Confirm New Password</label
+            >
+            <div class="password-container">
+              <input
+                type="password"
+                id="confirm-new-password"
+                name="confirm_password"
+                autocomplete="new-password"
+                required
+              />
+            </div>
+          </div>
+
+          <button type="submit" class="button">Update Password</button>
+
+          <div class="form-message" id="password-error"></div>
+          <div class="form-message success" id="password-success"></div>
+        </form>
+
+        <!-- Delete account section -->
+        <div class="profile-form danger-zone">
+          <h2>Danger Zone</h2>
+          <p class="warning-text">
+            Account deletion is permanent and cannot be undone.
+          </p>
+          <button
+            type="button"
+            class="button button-danger"
+            id="delete-account-btn"
+          >
+            Delete Account
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete confirmation modal -->
+    <div id="delete-modal" class="modal">
+      <form id="deleteForm" action="/delete" method="POST">
+        <div class="modal-content">
+          <h2>Confirm Account Deletion</h2>
+          <p>
+            Are you sure you want to delete your account? This action cannot be
+            undone.
+          </p>
+          <div class="username-box">
+            <!-- Hidden so password managers know what to do -->
+            <input
+              type="text"
+              id="username-hidden-delete"
+              name="username"
+              autocomplete="username"
+              hidden
+            />
+          </div>
+
+          <div class="password-row">
+            <label class="password" for="delete-password"
+              >Enter Password to Confirm</label
+            >
+            <div class="password-container">
+              <input
+                type="password"
+                id="delete-password"
+                autocomplete="current-password"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button type="button" class="button" id="cancel-delete-btn">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="button button-danger"
+              id="confirm-delete-btn"
+            >
+              Delete My Account
+            </button>
+          </div>
+
+          <div class="form-message" id="delete-error"></div>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

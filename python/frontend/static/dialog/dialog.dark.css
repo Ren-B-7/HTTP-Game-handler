@@ -1,0 +1,142 @@
+/* Draw Dialog Styles - Dark Theme */
+/* Add these styles to game.dark.css */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Draw Offer Dialog
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.draw-modal {
+  position: relative;
+  overflow: visible;
+}
+
+.draw-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(33, 150, 243, 0.1));
+  border: 2px solid rgba(33, 150, 243, 0.4);
+  border-radius: 50%;
+  color: #2196F3;
+  animation: pulse-icon 2s ease-in-out infinite;
+}
+
+.draw-icon-sent {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(255, 152, 0, 0.1));
+  border-color: rgba(255, 152, 0, 0.4);
+  color: #FF9800;
+}
+
+@keyframes pulse-icon {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
+  }
+}
+
+.draw-icon svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.draw-subtitle {
+  display: block;
+  margin-top: 8px;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Button variants for draw dialog */
+.button-success {
+  background: linear-gradient(135deg, #4CAF50, #388E3C) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+}
+
+.button-success:hover {
+  background: linear-gradient(135deg, #66BB6A, #4CAF50) !important;
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
+}
+
+.button-secondary {
+  background: linear-gradient(135deg, #555, #444) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(85, 85, 85, 0.3) !important;
+}
+
+.button-secondary:hover {
+  background: linear-gradient(135deg, #666, #555) !important;
+  box-shadow: 0 6px 20px rgba(85, 85, 85, 0.4) !important;
+}
+
+/* Draw dialog specific animations */
+.modal#draw-offer-dialog[style*="flex"] .modal-content,
+.modal#draw-sent-dialog[style*="flex"] .modal-content {
+  animation: slideInBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideInBounce {
+  0% {
+    transform: scale(0.7) translateY(-50px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05) translateY(0);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Waiting state indicator */
+.draw-modal .dialog-message {
+  position: relative;
+}
+
+#draw-sent-dialog .dialog-message::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-left: 4px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+/* Responsive adjustments for draw dialog */
+@media (max-width: 480px) {
+  .draw-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+  
+  .draw-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .draw-subtitle {
+    font-size: 0.9rem;
+  }
+}
